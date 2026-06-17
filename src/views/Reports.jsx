@@ -6,7 +6,7 @@ import { startOfWeek, endOfWeek, isWithinInterval, isSameDay, format, parseISO }
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const Reports = () => {
-  const { sales, inventory, menuItems, resetSystem, userRole, adminDeleteSale, adminClearAllSales } = useContext(AppDataContext);
+  const { sales, inventory, menuItems, resetSystem, userRole, adminDeleteSale, adminClearAllSales, voidSale } = useContext(AppDataContext);
   const [resetPin, setResetPin] = useState('');
 
   // Default to current week
@@ -42,7 +42,7 @@ const Reports = () => {
 
   // 1. Calculate Today's Revenue (Independent of date picker)
   const todaysRevenue = sales
-    .filter(sale => isSameDay(new Date(sale.date), today))
+    .filter(sale => isSameDay(new Date(sale.date), today) && sale.status !== 'voided')
     .reduce((sum, sale) => sum + sale.total, 0);
 
   // 2. Filter sales by selected date range
@@ -59,15 +59,16 @@ const Reports = () => {
     });
   }, [sales, startDate, endDate]);
 
-  const totalRevenue = filteredSales.reduce((sum, sale) => sum + sale.total, 0);
-  const totalOrders = filteredSales.length;
+  const validSales = filteredSales.filter(s => s.status !== 'voided');
+  const totalRevenue = validSales.reduce((sum, sale) => sum + sale.total, 0);
+  const totalOrders = validSales.length;
   const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
-  const totalTax = filteredSales.reduce((sum, sale) => sum + sale.tax, 0);
+  const totalTax = validSales.reduce((sum, sale) => sum + sale.tax, 0);
 
   // 3. Group filtered sales for the Chart
   const chartData = useMemo(() => {
     const grouped = {};
-    filteredSales.forEach(sale => {
+    validSales.forEach(sale => {
       const day = format(new Date(sale.date), 'MMM dd');
       if (!grouped[day]) grouped[day] = 0;
       grouped[day] += sale.total;
@@ -81,7 +82,7 @@ const Reports = () => {
   }, [filteredSales]);
 
   // Group by payment method
-  const paymentMix = filteredSales.reduce((acc, sale) => {
+  const paymentMix = validSales.reduce((acc, sale) => {
     acc[sale.method] = (acc[sale.method] || 0) + 1;
     return acc;
   }, {});
@@ -198,22 +199,6 @@ const Reports = () => {
       </div>
 
       <div className="card" style={{ marginTop: '24px' }}>
-        <h3 style={{ fontSize: '16px', marginBottom: '16px' }}>Tax summary (Selected Period)</h3>
-        <div className="summary-row">
-          <span>GST @ 5% (food & beverage)</span>
-          <span style={{ fontWeight: 600 }}>₹{totalTax.toFixed(2)}</span>
-        </div>
-        <div className="summary-row">
-          <span>Net taxable sales</span>
-          <span style={{ fontWeight: 600 }}>₹{totalRevenue.toFixed(2)}</span>
-        </div>
-        <div className="summary-row total" style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--border)' }}>
-          <span style={{ color: '#ff6d00' }}>Total tax payable</span>
-          <span style={{ color: '#ff6d00' }}>₹{totalTax.toFixed(2)}</span>
-        </div>
-      </div>
-
-      <div className="card" style={{ marginTop: '24px' }}>
         <h3 style={{ fontSize: '16px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
           <ReceiptText size={18}/> Transaction Log (Selected Period)
         </h3>
@@ -229,7 +214,7 @@ const Reports = () => {
                   <th>Items</th>
                   <th>Method</th>
                   <th>Total</th>
-                  {userRole === 'admin' && <th>Action</th>}
+                  <th>Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -262,16 +247,27 @@ const Reports = () => {
                           {sale.method}
                         </span>
                       </td>
-                      <td style={{ fontWeight: 600 }}>₹{sale.total.toFixed(2)}</td>
-                      {userRole === 'admin' && (
-                        <td style={{ textAlign: 'center' }}>
+                      <td style={{ fontWeight: 600, textDecoration: sale.status === 'voided' ? 'line-through' : 'none', color: sale.status === 'voided' ? 'var(--text-muted)' : 'inherit' }}>
+                        ₹{sale.total.toFixed(2)}
+                      </td>
+                      <td style={{ textAlign: 'center' }}>
+                        {sale.status === 'voided' ? (
+                          <span style={{ fontSize: '12px', color: '#d32f2f', fontWeight: 600, background: '#ffebee', padding: '2px 6px', borderRadius: '4px' }}>VOIDED</span>
+                        ) : (
+                          <button onClick={() => {
+                            if (window.confirm("Void this transaction? (Items will return to inventory)")) voidSale(sale.id);
+                          }} style={{ color: '#ff9800', background: 'none', border: 'none', cursor: 'pointer', marginRight: '8px' }}>
+                            <AlertTriangle size={16} />
+                          </button>
+                        )}
+                        {userRole === 'admin' && (
                           <button onClick={() => {
                             if (window.confirm("Delete this transaction permanently?")) adminDeleteSale(sale.id);
                           }} style={{ color: '#c62828', background: 'none', border: 'none', cursor: 'pointer' }}>
                             <Trash2 size={16} />
                           </button>
-                        </td>
-                      )}
+                        )}
+                      </td>
                     </tr>
                   )
                 })}
@@ -281,61 +277,65 @@ const Reports = () => {
         )}
       </div>
 
-      <div className="card" style={{ marginTop: '24px' }}>
-        <h3 style={{ fontSize: '16px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Database size={18}/> Data Management & Backup
-        </h3>
-        <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginBottom: '16px' }}>
-          Download system backups or export financial reports for accounting.
-        </p>
-        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-          <button className="btn btn-secondary" onClick={() => handleExport('csv')}>
-            <Download size={16}/> Export Sales CSV
-          </button>
-          <button className="btn btn-secondary" onClick={() => handleExport('pdf')}>
-            <Download size={16}/> Export Sales PDF
-          </button>
-          <button className="btn btn-secondary" onClick={() => handleExport('xlsx')}>
-            <Download size={16}/> Export Inventory Excel
-          </button>
-          <button className="btn btn-primary" onClick={() => handleExport('json')}>
-            <Database size={16}/> Full Backup (JSON)
-          </button>
-        </div>
-      </div>
-
-      <div className="card" style={{ marginTop: '24px', border: '1px solid #ffcdd2', background: '#fffafb' }}>
-        <h3 style={{ fontSize: '16px', marginBottom: '16px', color: '#c62828', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <AlertTriangle size={18}/> Danger Zone
-        </h3>
-        <p style={{ fontSize: '14px', color: '#b71c1c', marginBottom: '16px' }}>
-          This action will permanently delete all sales and reset inventory/menu to defaults. Cannot be undone.
-        </p>
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
-          <div className="form-group" style={{ marginBottom: 0 }}>
-            <input 
-              type="password" 
-              className="form-input" 
-              placeholder="Enter Manager PIN to verify" 
-              value={resetPin}
-              onChange={(e) => setResetPin(e.target.value)}
-              style={{ width: '250px' }}
-            />
+      {userRole !== 'cashier' && (
+        <>
+          <div className="card" style={{ marginTop: '24px' }}>
+            <h3 style={{ fontSize: '16px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Database size={18}/> Data Management & Backup
+            </h3>
+            <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginBottom: '16px' }}>
+              Download system backups or export financial reports for accounting.
+            </p>
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+              <button className="btn btn-secondary" onClick={() => handleExport('csv')}>
+                <Download size={16}/> Export Sales CSV
+              </button>
+              <button className="btn btn-secondary" onClick={() => handleExport('pdf')}>
+                <Download size={16}/> Export Sales PDF
+              </button>
+              <button className="btn btn-secondary" onClick={() => handleExport('xlsx')}>
+                <Download size={16}/> Export Inventory Excel
+              </button>
+              <button className="btn btn-primary" onClick={() => handleExport('json')}>
+                <Database size={16}/> Full Backup (JSON)
+              </button>
+            </div>
           </div>
-          <button className="btn btn-primary" style={{ background: '#c62828' }} onClick={handleReset}>
-            Factory Reset System
-          </button>
-          {userRole === 'admin' && (
-            <button className="btn btn-primary" style={{ background: '#d32f2f' }} onClick={() => {
-              if (window.confirm("Are you sure you want to permanently delete ALL sales logs?")) {
-                adminClearAllSales();
-              }
-            }}>
-              Clear All Sales Data
-            </button>
-          )}
-        </div>
-      </div>
+
+          <div className="card" style={{ marginTop: '24px', border: '1px solid #ffcdd2', background: '#fffafb' }}>
+            <h3 style={{ fontSize: '16px', marginBottom: '16px', color: '#c62828', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <AlertTriangle size={18}/> Danger Zone
+            </h3>
+            <p style={{ fontSize: '14px', color: '#b71c1c', marginBottom: '16px' }}>
+              This action will permanently delete all sales and reset inventory/menu to defaults. Cannot be undone.
+            </p>
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <input 
+                  type="password" 
+                  className="form-input" 
+                  placeholder="Enter Manager PIN to verify" 
+                  value={resetPin}
+                  onChange={(e) => setResetPin(e.target.value)}
+                  style={{ width: '250px' }}
+                />
+              </div>
+              <button className="btn btn-primary" style={{ background: '#c62828' }} onClick={handleReset}>
+                Factory Reset System
+              </button>
+              {userRole === 'admin' && (
+                <button className="btn btn-primary" style={{ background: '#d32f2f' }} onClick={() => {
+                  if (window.confirm("Are you sure you want to permanently delete ALL sales logs?")) {
+                    adminClearAllSales();
+                  }
+                }}>
+                  Clear All Sales Data
+                </button>
+              )}
+            </div>
+          </div>
+        </>
+      )}
     </>
   );
 };

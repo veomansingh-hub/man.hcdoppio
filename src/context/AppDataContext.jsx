@@ -206,6 +206,48 @@ export const AppDataProvider = ({ children }) => {
     addToSyncQueue({ table: 'sales', type: 'TRUNCATE' });
   };
 
+  const voidSale = (saleId) => {
+    // Only allow cashier, manager, or admin to void
+    const updatedSales = sales.map(s => {
+      if (s.id === saleId) {
+        const voidedSale = { ...s, status: 'voided', voidedBy: userRole };
+        addToSyncQueue({ table: 'sales', type: 'UPDATE', payload: voidedSale });
+        return voidedSale;
+      }
+      return s;
+    });
+    setSales(updatedSales);
+    
+    // Reverse the inventory deduction
+    const saleToVoid = sales.find(s => s.id === saleId);
+    if (saleToVoid && saleToVoid.status !== 'voided') {
+      const updatedInventoryList = [...inventory];
+      let inventoryChanged = false;
+      
+      saleToVoid.items.forEach(soldItem => {
+        const menuItem = menuItems.find(m => m.id === soldItem.id);
+        if (menuItem && menuItem.recipe && menuItem.recipe.length > 0) {
+          menuItem.recipe.forEach(recipeIngredient => {
+            const invItemIndex = updatedInventoryList.findIndex(inv => inv.id === recipeIngredient.ingredientId);
+            if (invItemIndex !== -1) {
+              const invItem = updatedInventoryList[invItemIndex];
+              const currentStockNum = parseFloat(String(invItem.inStock).replace(/[^\d.]/g, '')) || 0;
+              const unit = String(invItem.inStock).replace(/[\d.]/g, '').trim();
+              const additionAmount = parseFloat(recipeIngredient.quantity) * soldItem.quantity;
+              const newStockNum = currentStockNum + additionAmount;
+              
+              const updatedInvItem = { ...invItem, inStock: `${newStockNum}${unit}` };
+              updatedInventoryList[invItemIndex] = updatedInvItem;
+              inventoryChanged = true;
+              addToSyncQueue({ table: 'inventory', type: 'UPDATE', payload: updatedInvItem });
+            }
+          });
+        }
+      });
+      if (inventoryChanged) setInventory(updatedInventoryList);
+    }
+  };
+
   const addSale = (orderTotal, taxCollected, paymentMethod, items) => {
     const now = new Date();
     const dd = String(now.getDate()).padStart(2, '0');
@@ -376,7 +418,8 @@ export const AppDataProvider = ({ children }) => {
       getComputedStatus,
       fetchFromSupabase,
       adminDeleteSale,
-      adminClearAllSales
+      adminClearAllSales,
+      voidSale
     }}>
       {children}
     </AppDataContext.Provider>

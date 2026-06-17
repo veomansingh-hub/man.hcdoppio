@@ -29,25 +29,29 @@ const BottomNav = ({ activeTab, setActiveTab }) => {
   return (
     <>
       <div className="bottom-nav">
-        {(userRole === 'manager' || userRole === 'admin') && (
-          <button className="bottom-nav-item" onClick={() => setShowMore(true)}>
-            <div style={{ display: 'flex', gap: '4px', marginBottom: '4px' }}>
-              <div style={{width: 4, height: 4, borderRadius: '50%', background: 'var(--text-muted)'}}></div>
-              <div style={{width: 4, height: 4, borderRadius: '50%', background: 'var(--text-muted)'}}></div>
-              <div style={{width: 4, height: 4, borderRadius: '50%', background: 'var(--text-muted)'}}></div>
-            </div>
-            More
-          </button>
-        )}
+        <button className="bottom-nav-item" onClick={() => setShowMore(true)}>
+          <div style={{ display: 'flex', gap: '4px', marginBottom: '4px' }}>
+            <div style={{width: 4, height: 4, borderRadius: '50%', background: 'var(--text-muted)'}}></div>
+            <div style={{width: 4, height: 4, borderRadius: '50%', background: 'var(--text-muted)'}}></div>
+            <div style={{width: 4, height: 4, borderRadius: '50%', background: 'var(--text-muted)'}}></div>
+          </div>
+          More
+        </button>
       </div>
 
       {showMore && (
         <>
           <div className="sidebar-overlay open" onClick={() => setShowMore(false)}></div>
           <div className="bottom-sheet">
-            <button className="sheet-item" onClick={() => { setActiveTab('reports'); setShowMore(false); }}>Reports</button>
-            <button className="sheet-item" onClick={() => { setActiveTab('inventory'); setShowMore(false); }}>Inventory</button>
-            <button className="sheet-item" onClick={() => { setActiveTab('menu_editor'); setShowMore(false); }}>Menu Editor</button>
+            <button className="sheet-item" onClick={() => { setActiveTab('reports'); setShowMore(false); }}>
+              {userRole === 'cashier' ? 'My Sales Logs' : 'Reports'}
+            </button>
+            {userRole !== 'cashier' && (
+              <>
+                <button className="sheet-item" onClick={() => { setActiveTab('inventory'); setShowMore(false); }}>Inventory</button>
+                <button className="sheet-item" onClick={() => { setActiveTab('menu_editor'); setShowMore(false); }}>Menu Editor</button>
+              </>
+            )}
             <button className="sheet-item" onClick={() => { setActiveTab('pos'); setShowMore(false); }}>Back to POS</button>
           </div>
         </>
