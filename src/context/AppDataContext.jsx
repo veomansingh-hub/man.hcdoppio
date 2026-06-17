@@ -122,21 +122,12 @@ export const AppDataProvider = ({ children }) => {
   const executeAction = async (action) => {
     if (!supabase) return;
     try {
-      let payload = { ...action.payload };
-      
-      // Workaround: Supabase menu_items doesn't have a 'recipe' column.
-      // We will serialize 'recipe' into the unused 'stock' column.
-      if (action.table === 'menu_items' && payload.recipe !== undefined) {
-        payload.stock = JSON.stringify(payload.recipe);
-        delete payload.recipe;
-      }
-
       if (action.type === 'INSERT') {
-        await supabase.from(action.table).insert(payload);
+        await supabase.from(action.table).insert(action.payload);
       } else if (action.type === 'UPDATE') {
-        await supabase.from(action.table).update(payload).eq('id', payload.id);
+        await supabase.from(action.table).update(action.payload).eq('id', action.payload.id);
       } else if (action.type === 'DELETE') {
-        await supabase.from(action.table).delete().eq('id', payload.id);
+        await supabase.from(action.table).delete().eq('id', action.payload.id);
       } else if (action.type === 'TRUNCATE') {
         await supabase.from(action.table).delete().neq('id', 0); // Effectively truncate
       }
@@ -170,19 +161,7 @@ export const AppDataProvider = ({ children }) => {
     if (!supabase) return;
     try {
       const { data: mData } = await supabase.from('menu_items').select('*');
-      if (mData && mData.length > 0) {
-        // Unpack recipe from stock column
-        const unpackedMenu = mData.map(item => {
-          let recipe = [];
-          try {
-            if (item.stock && item.stock.startsWith('[')) {
-              recipe = JSON.parse(item.stock);
-            }
-          } catch (e) {}
-          return { ...item, recipe, stock: 'In stock' };
-        });
-        setMenuItems(unpackedMenu);
-      }
+      if (mData && mData.length > 0) setMenuItems(mData);
 
       const { data: iData } = await supabase.from('inventory').select('*');
       if (iData && iData.length > 0) setInventory(iData);
