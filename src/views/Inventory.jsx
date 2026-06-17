@@ -125,8 +125,8 @@ const Inventory = () => {
             <tr>
               <th>Ingredient</th>
               <th>Current Stock</th>
-              <th>Par Level (Total Stock)</th>
-              <th>Health</th>
+              <th>Total Stock</th>
+              <th>Status</th>
               <th>Actions</th>
             </tr>
           </thead>
