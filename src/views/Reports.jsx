@@ -16,10 +16,17 @@ const Reports = () => {
 
   const handleExport = (formatType) => {
     const backupData = { menuItems, inventory, sales };
+    
+    // Format sales data for CSV/PDF to prevent [object Object] errors
+    const formattedSales = sales.map(s => ({
+      ...s,
+      items: s.items ? s.items.map(i => `${i.quantity}x ${i.name}`).join(', ') : ''
+    }));
+
     if (formatType === 'json') exportToJSON(backupData, 'doppio_backup');
-    else if (formatType === 'csv') exportToCSV(sales, 'doppio_sales');
+    else if (formatType === 'csv') exportToCSV(formattedSales, 'doppio_sales');
     else if (formatType === 'xlsx') exportToExcel(inventory, 'doppio_inventory');
-    else if (formatType === 'pdf') exportToPDF(sales, 'doppio_sales_report', 'Sales Report');
+    else if (formatType === 'pdf') exportToPDF(formattedSales, 'doppio_sales_report', 'Sales Report');
   };
 
   const handleReset = () => {

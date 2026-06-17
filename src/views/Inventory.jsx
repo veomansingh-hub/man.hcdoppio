@@ -1,11 +1,13 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useRef } from 'react';
 import { AppDataContext } from '../context/AppDataContext';
 import { Plus, Download, Upload, Check, X, Edit2 } from 'lucide-react';
+import { importFromCSV, exportToExcel } from '../utils/exportUtils';
 
 const Inventory = () => {
-  const { inventory, updateInventoryItem } = useContext(AppDataContext);
+  const { inventory, updateInventoryItem, addInventoryItem } = useContext(AppDataContext);
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({});
+  const fileInputRef = useRef(null);
 
   const startEdit = (item) => {
     setEditingId(item.id);
@@ -21,6 +23,30 @@ const Inventory = () => {
     setEditingId(null);
   };
 
+  const handleImport = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      const data = await importFromCSV(file);
+      if (data && data.length > 0) {
+        data.forEach(item => {
+          if (item.ingredient) addInventoryItem(item);
+        });
+        alert('Inventory imported successfully!');
+      }
+    } catch (err) {
+      alert('Error importing file');
+    }
+    e.target.value = null;
+  };
+
+  const handleDownloadTemplate = () => {
+    const template = [{
+      ingredient: "New Ingredient", category: "Food", inStock: "0kg", minLevel: "5kg", unitCost: "₹100/kg"
+    }];
+    exportToExcel(template, "doppio_inventory_template");
+  };
+
   return (
     <>
       <div className="page-header">
@@ -29,9 +55,16 @@ const Inventory = () => {
           <p className="page-subtitle">Track stock, suppliers & low-stock alerts</p>
         </div>
         <div style={{ display: 'flex', gap: '12px' }}>
-          <button className="btn btn-secondary"><Download size={16}/> Download Template</button>
-          <button className="btn btn-secondary"><Upload size={16}/> Import CSV</button>
-          <button className="btn btn-primary"><Plus size={16}/> Add Ingredient</button>
+          <input 
+            type="file" 
+            accept=".csv" 
+            ref={fileInputRef} 
+            style={{ display: 'none' }} 
+            onChange={handleImport}
+          />
+          <button className="btn btn-secondary" onClick={handleDownloadTemplate}><Download size={16}/> Download Template</button>
+          <button className="btn btn-secondary" onClick={() => fileInputRef.current?.click()}><Upload size={16}/> Import CSV</button>
+          <button className="btn btn-primary" onClick={() => addInventoryItem({ ingredient: 'New Item', category: 'General', inStock: '0', minLevel: '0', unitCost: '0' })}><Plus size={16}/> Add Ingredient</button>
         </div>
       </div>
 

@@ -209,12 +209,15 @@ export const AppDataProvider = ({ children }) => {
     addToSyncQueue({ table: 'menu_items', type: 'UPDATE', payload: updated });
   };
 
-  const updateInventoryItem = (id, updatedData) => {
-    const item = inventory.find(i => i.id === id);
-    if (!item) return;
-    const updated = { ...item, ...updatedData };
-    setInventory(inventory.map(i => i.id === id ? updated : i));
-    addToSyncQueue({ table: 'inventory', type: 'UPDATE', payload: updated });
+  const updateInventoryItem = (id, updates) => {
+    setInventory(prev => prev.map(item => item.id === id ? { ...item, ...updates } : item));
+    addToSyncQueue({ table: 'inventory', type: 'UPDATE', payload: { id, ...updates } });
+  };
+
+  const addInventoryItem = (item) => {
+    const newItem = { id: Date.now() + Math.random(), ...item };
+    setInventory(prev => [...prev, newItem]);
+    addToSyncQueue({ table: 'inventory', type: 'INSERT', payload: newItem });
   };
 
   const resetSystem = (pin) => {
@@ -258,6 +261,7 @@ export const AppDataProvider = ({ children }) => {
       deleteMenuItem,
       updateMenuItem,
       updateInventoryItem,
+      addInventoryItem,
       setInventory,
       setMenuItems,
       resetSystem
