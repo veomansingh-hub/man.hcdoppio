@@ -2,6 +2,35 @@ import React, { useContext, useState, useMemo } from 'react';
 import { AppDataContext } from '../context/AppDataContext';
 import { Minus, Plus, Trash2, ArrowLeft } from 'lucide-react';
 
+const playFeedback = () => {
+  try {
+    // Haptic vibration (50ms)
+    if (navigator.vibrate) navigator.vibrate(50);
+    
+    // Tiny beep using Web Audio API
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (AudioContext) {
+      const ctx = new AudioContext();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(800, ctx.currentTime);
+      
+      gain.gain.setValueAtTime(0.1, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.1);
+      
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      
+      osc.start();
+      osc.stop(ctx.currentTime + 0.1);
+    }
+  } catch (e) {
+    // Ignore context errors on browsers that restrict audio without interaction
+  }
+};
+
 const POS = () => {
   const { menuItems, addSale } = useContext(AppDataContext);
   const [activeCategory, setActiveCategory] = useState('All');
@@ -23,6 +52,7 @@ const POS = () => {
   }, [menuItems, activeCategory]);
 
   const addToCart = (item) => {
+    playFeedback();
     const existingItem = cart.find(cartItem => cartItem.id === item.id);
     if (existingItem) {
       setCart(cart.map(cartItem => 

@@ -1,4 +1,5 @@
 import React, { useState, useContext } from 'react';
+import { Menu } from 'lucide-react';
 import Sidebar from './components/Sidebar';
 import POS from './views/POS';
 import Inventory from './views/Inventory';
@@ -10,6 +11,7 @@ import { AppDataProvider, AppDataContext } from './context/AppDataContext';
 function AppContent() {
   const { userRole } = useContext(AppDataContext);
   const [activeTab, setActiveTab] = useState('pos');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   if (!userRole) {
     return <Login />;
@@ -31,8 +33,17 @@ function AppContent() {
 
   return (
     <div className="app-container">
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+      <Sidebar 
+        activeTab={activeTab} 
+        setActiveTab={setActiveTab} 
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+      />
       <main className="main-content">
+        <div className="mobile-header">
+          <Menu size={24} onClick={() => setIsSidebarOpen(true)} />
+          <div className="logo-text">doppio</div>
+        </div>
         {renderView()}
       </main>
     </div>

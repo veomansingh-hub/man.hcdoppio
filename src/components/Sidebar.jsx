@@ -1,8 +1,8 @@
 import React, { useContext } from 'react';
-import { LayoutDashboard, ShoppingCart, ClipboardList, PenTool } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, ClipboardList, PenTool, X } from 'lucide-react';
 import { AppDataContext } from '../context/AppDataContext';
 
-const Sidebar = ({ activeTab, setActiveTab }) => {
+const Sidebar = ({ activeTab, setActiveTab, isOpen, onClose }) => {
   const { inventory, userRole, logout, isOnline } = useContext(AppDataContext);
 
   const hasCritical = inventory.some(i => i.computedStatus === 'Critical');
@@ -31,18 +31,28 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
     : allTabs;
 
   return (
-    <div className="sidebar">
-      <div className="sidebar-logo">
-        <span className="logo-text">doppio</span>
-        <span className="logo-subtext">cafe</span>
-      </div>
+    <>
+      <div className={`sidebar-overlay ${isOpen ? 'open' : ''}`} onClick={onClose}></div>
+      <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
+        <div className="sidebar-logo">
+          <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+            <div style={{ flex: 1, textAlign: 'center' }}>
+              <div className="logo-text">doppio</div>
+              <div className="logo-subtext">CAFE</div>
+            </div>
+            <X className="mobile-only-close" size={24} style={{ display: 'none', cursor: 'pointer' }} onClick={onClose} />
+          </div>
+        </div>
       
       <nav className="sidebar-nav">
         {tabs.map(tab => (
           <button
             key={tab.id}
             className={`nav-item ${activeTab === tab.id ? 'active' : ''}`}
-            onClick={() => setActiveTab(tab.id)}
+            onClick={() => {
+              setActiveTab(tab.id);
+              if (window.innerWidth < 768) onClose();
+            }}
           >
             {tab.icon}
             <span>{tab.name}</span>
@@ -72,7 +82,8 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
           </button>
         </div>
       </div>
-    </div>
+      </aside>
+    </>
   );
 };
 
