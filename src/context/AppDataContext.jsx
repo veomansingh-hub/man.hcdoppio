@@ -285,6 +285,11 @@ export const AppDataProvider = ({ children }) => {
       addToSyncQueue({ table: 'menu_items', type: 'TRUNCATE' });
       addToSyncQueue({ table: 'inventory', type: 'TRUNCATE' });
       addToSyncQueue({ table: 'sales', type: 'TRUNCATE' });
+      
+      // Re-seed Supabase with initial data
+      initialMenuItems.forEach(item => addToSyncQueue({ table: 'menu_items', type: 'INSERT', payload: item }));
+      initialInventory.forEach(item => addToSyncQueue({ table: 'inventory', type: 'INSERT', payload: item }));
+      
       return true;
     }
     return false;
