@@ -22,16 +22,47 @@ const LiveClock = () => {
   );
 };
 
+const BottomNav = ({ activeTab, setActiveTab }) => {
+  const { userRole } = useContext(AppDataContext);
+  const [showMore, setShowMore] = useState(false);
+  
+  return (
+    <>
+      <div className="bottom-nav">
+        {userRole === 'manager' && (
+          <button className="bottom-nav-item" onClick={() => setShowMore(true)}>
+            <div style={{ display: 'flex', gap: '4px', marginBottom: '4px' }}>
+              <div style={{width: 4, height: 4, borderRadius: '50%', background: 'var(--text-muted)'}}></div>
+              <div style={{width: 4, height: 4, borderRadius: '50%', background: 'var(--text-muted)'}}></div>
+              <div style={{width: 4, height: 4, borderRadius: '50%', background: 'var(--text-muted)'}}></div>
+            </div>
+            More
+          </button>
+        )}
+      </div>
+
+      {showMore && (
+        <>
+          <div className="sidebar-overlay open" onClick={() => setShowMore(false)}></div>
+          <div className="bottom-sheet">
+            <button className="sheet-item" onClick={() => { setActiveTab('reports'); setShowMore(false); }}>Reports</button>
+            <button className="sheet-item" onClick={() => { setActiveTab('inventory'); setShowMore(false); }}>Inventory</button>
+            <button className="sheet-item" onClick={() => { setActiveTab('menu_editor'); setShowMore(false); }}>Menu Editor</button>
+            <button className="sheet-item" onClick={() => { setActiveTab('pos'); setShowMore(false); }}>Back to POS</button>
+          </div>
+        </>
+      )}
+    </>
+  );
+};
+
 function AppContent() {
   const { userRole, isOnline } = useContext(AppDataContext);
   const [activeTab, setActiveTab] = useState('pos');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  // Force navigate to POS on every login
   useEffect(() => {
     if (userRole) {
       setActiveTab('pos');
-      setIsSidebarOpen(false);
     }
   }, [userRole]);
 
@@ -40,10 +71,7 @@ function AppContent() {
   }
 
   const renderView = () => {
-    if (userRole === 'cashier' && (activeTab === 'inventory' || activeTab === 'menu_editor')) {
-      return <POS />;
-    }
-
+    if (userRole === 'cashier' && (activeTab === 'inventory' || activeTab === 'menu_editor')) return <POS />;
     switch (activeTab) {
       case 'pos': return <POS />;
       case 'inventory': return <Inventory />;
@@ -55,32 +83,20 @@ function AppContent() {
 
   return (
     <div className="app-container">
-      <Sidebar 
-        activeTab={activeTab} 
-        setActiveTab={setActiveTab} 
-        isOpen={isSidebarOpen}
-        onClose={() => setIsSidebarOpen(false)}
-      />
       <main className="main-content">
         <header className="global-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <button className="hamburger-btn" onClick={() => setIsSidebarOpen(true)}>
-              <Menu size={28} />
-            </button>
-            <div className="logo-text" style={{ fontSize: '24px' }}>doppio</div>
-          </div>
-          
-          <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-            <LiveClock />
-            <div className={`network-badge ${isOnline ? 'online' : 'offline'}`}>
-              {isOnline ? <Wifi size={16} /> : <WifiOff size={16} />}
-              <span>{isOnline ? 'Supabase Online' : 'Offline Mode'}</span>
-            </div>
+          <div className="logo-text" style={{ fontSize: '18px', letterSpacing: '1px', color: 'var(--text-main)', textTransform: 'uppercase' }}>RESTAURANT</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div className={`network-status-dot ${isOnline ? 'online' : 'offline'}`}></div>
+            <div className="header-icon-btn">☾</div>
+            <div className="header-icon-btn">🔔</div>
+            <div className="header-avatar">B</div>
           </div>
         </header>
         <div className="view-container">
           {renderView()}
         </div>
+        <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} />
       </main>
     </div>
   );
