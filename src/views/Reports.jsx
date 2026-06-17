@@ -1,12 +1,12 @@
 import React, { useContext, useState, useMemo } from 'react';
 import { AppDataContext } from '../context/AppDataContext';
-import { IndianRupee, ReceiptText, TrendingUp, Percent, Download, Upload, AlertTriangle, Database, Calendar } from 'lucide-react';
+import { Trash2, IndianRupee, ReceiptText, TrendingUp, Percent, Download, Upload, AlertTriangle, Database, Calendar } from 'lucide-react';
 import { exportToJSON, exportToCSV, exportToExcel, exportToPDF } from '../utils/exportUtils';
 import { startOfWeek, endOfWeek, isWithinInterval, isSameDay, format, parseISO } from 'date-fns';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const Reports = () => {
-  const { sales, inventory, menuItems, resetSystem } = useContext(AppDataContext);
+  const { sales, inventory, menuItems, resetSystem, userRole, adminDeleteSale, adminClearAllSales } = useContext(AppDataContext);
   const [resetPin, setResetPin] = useState('');
 
   // Default to current week
@@ -229,6 +229,7 @@ const Reports = () => {
                   <th>Items</th>
                   <th>Method</th>
                   <th>Total</th>
+                  {userRole === 'admin' && <th>Action</th>}
                 </tr>
               </thead>
               <tbody>
@@ -262,6 +263,15 @@ const Reports = () => {
                         </span>
                       </td>
                       <td style={{ fontWeight: 600 }}>₹{sale.total.toFixed(2)}</td>
+                      {userRole === 'admin' && (
+                        <td style={{ textAlign: 'center' }}>
+                          <button onClick={() => {
+                            if (window.confirm("Delete this transaction permanently?")) adminDeleteSale(sale.id);
+                          }} style={{ color: '#c62828', background: 'none', border: 'none', cursor: 'pointer' }}>
+                            <Trash2 size={16} />
+                          </button>
+                        </td>
+                      )}
                     </tr>
                   )
                 })}
@@ -315,6 +325,15 @@ const Reports = () => {
           <button className="btn btn-primary" style={{ background: '#c62828' }} onClick={handleReset}>
             Factory Reset System
           </button>
+          {userRole === 'admin' && (
+            <button className="btn btn-primary" style={{ background: '#d32f2f' }} onClick={() => {
+              if (window.confirm("Are you sure you want to permanently delete ALL sales logs?")) {
+                adminClearAllSales();
+              }
+            }}>
+              Clear All Sales Data
+            </button>
+          )}
         </div>
       </div>
     </>

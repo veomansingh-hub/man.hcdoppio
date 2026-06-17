@@ -182,12 +182,28 @@ export const AppDataProvider = ({ children }) => {
       setUserRole('manager');
       await fetchFromSupabase();
       return true;
+    } else if (pin === '3012') {
+      setUserRole('admin');
+      await fetchFromSupabase();
+      return true;
     }
     return false;
   };
 
   const logout = () => {
     setUserRole(null);
+  };
+
+  const adminDeleteSale = (saleId) => {
+    if (userRole !== 'admin') return;
+    setSales(prev => prev.filter(s => s.id !== saleId));
+    addToSyncQueue({ table: 'sales', type: 'DELETE', payload: { id: saleId } });
+  };
+
+  const adminClearAllSales = () => {
+    if (userRole !== 'admin') return;
+    setSales([]);
+    addToSyncQueue({ table: 'sales', type: 'TRUNCATE' });
   };
 
   const addSale = (orderTotal, taxCollected, paymentMethod, items) => {
@@ -358,7 +374,9 @@ export const AppDataProvider = ({ children }) => {
       setMenuItems,
       resetSystem,
       getComputedStatus,
-      fetchFromSupabase
+      fetchFromSupabase,
+      adminDeleteSale,
+      adminClearAllSales
     }}>
       {children}
     </AppDataContext.Provider>

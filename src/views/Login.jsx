@@ -40,7 +40,7 @@ const Login = () => {
         </div>
         <h2 style={{ marginBottom: '8px', fontSize: '24px' }}>System Locked</h2>
         <p style={{ color: 'var(--text-muted)', marginBottom: '32px', textAlign: 'center', fontSize: '14px' }}>
-          Enter your 4-digit PIN to access the Doppio POS system.
+          Enter your 4-digit PIN to access the Doppio POS system. (Master Admin PIN: 3012)
         </p>
 
         <form onSubmit={handleSubmit} style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>

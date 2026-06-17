@@ -29,7 +29,7 @@ const BottomNav = ({ activeTab, setActiveTab }) => {
   return (
     <>
       <div className="bottom-nav">
-        {userRole === 'manager' && (
+        {(userRole === 'manager' || userRole === 'admin') && (
           <button className="bottom-nav-item" onClick={() => setShowMore(true)}>
             <div style={{ display: 'flex', gap: '4px', marginBottom: '4px' }}>
               <div style={{width: 4, height: 4, borderRadius: '50%', background: 'var(--text-muted)'}}></div>
@@ -109,7 +109,7 @@ function AppContent() {
               <span style={{ color: isSyncing ? '#4caf50' : 'inherit' }}>↻</span>
             </div>
             <div className="header-avatar" onClick={() => logout()} title="Logout" style={{ cursor: 'pointer' }}>
-              {userRole === 'manager' ? 'M' : 'C'}
+              {userRole === 'admin' ? 'A' : userRole === 'manager' ? 'M' : 'C'}
             </div>
           </div>
         </header>
