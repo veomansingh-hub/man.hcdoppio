@@ -27,6 +27,14 @@ function AppContent() {
   const [activeTab, setActiveTab] = useState('pos');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
+  // Force navigate to POS on every login
+  useEffect(() => {
+    if (userRole) {
+      setActiveTab('pos');
+      setIsSidebarOpen(false);
+    }
+  }, [userRole]);
+
   if (!userRole) {
     return <Login />;
   }
