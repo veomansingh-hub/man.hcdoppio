@@ -2,32 +2,39 @@ import React, { useContext, useState, useMemo } from 'react';
 import { AppDataContext } from '../context/AppDataContext';
 import { Minus, Plus, Trash2, ArrowLeft } from 'lucide-react';
 
+let audioCtx = null;
+
 const playFeedback = () => {
   try {
     // Haptic vibration (50ms)
     if (navigator.vibrate) navigator.vibrate(50);
     
     // Tiny beep using Web Audio API
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    if (AudioContext) {
-      const ctx = new AudioContext();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
+    if (!audioCtx) {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (AudioContext) audioCtx = new AudioContext();
+    }
+    
+    if (audioCtx) {
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
       
       osc.type = 'sine';
-      osc.frequency.setValueAtTime(800, ctx.currentTime);
+      osc.frequency.setValueAtTime(800, audioCtx.currentTime);
       
-      gain.gain.setValueAtTime(0.1, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.1);
+      gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
       
       osc.connect(gain);
-      gain.connect(ctx.destination);
+      gain.connect(audioCtx.destination);
       
       osc.start();
-      osc.stop(ctx.currentTime + 0.1);
+      osc.stop(audioCtx.currentTime + 0.1);
     }
   } catch (e) {
-    // Ignore context errors on browsers that restrict audio without interaction
+    console.warn('Audio feedback blocked by browser');
   }
 };
 

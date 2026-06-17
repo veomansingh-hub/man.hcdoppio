@@ -51,7 +51,7 @@ const Sidebar = ({ activeTab, setActiveTab, isOpen, onClose }) => {
             className={`nav-item ${activeTab === tab.id ? 'active' : ''}`}
             onClick={() => {
               setActiveTab(tab.id);
-              if (window.innerWidth < 768) onClose();
+              if (window.innerWidth <= 1024) onClose();
             }}
           >
             {tab.icon}
