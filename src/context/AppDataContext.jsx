@@ -177,6 +177,49 @@ export const AppDataProvider = ({ children }) => {
       method: paymentMethod,
       items: items
     };
+    
+    // Live Inventory Deduction
+    const updatedInventoryList = [...inventory];
+    let inventoryChanged = false;
+
+    items.forEach(soldItem => {
+      // Find the menu item to get its recipe
+      const menuItem = menuItems.find(m => m.id === soldItem.id);
+      if (menuItem && menuItem.recipe && menuItem.recipe.length > 0) {
+        menuItem.recipe.forEach(recipeIngredient => {
+          // Find the corresponding inventory item
+          const invItemIndex = updatedInventoryList.findIndex(inv => inv.id === recipeIngredient.ingredientId);
+          if (invItemIndex !== -1) {
+            const invItem = updatedInventoryList[invItemIndex];
+            
+            // Extract numeric value and unit
+            const currentStockNum = parseFloat(String(invItem.inStock).replace(/[^\d.]/g, '')) || 0;
+            const unit = String(invItem.inStock).replace(/[\d.]/g, '').trim();
+            
+            // Calculate deduction
+            const deductionAmount = parseFloat(recipeIngredient.quantity) * soldItem.quantity;
+            const newStockNum = Math.max(0, currentStockNum - deductionAmount);
+            
+            // Create updated inventory item
+            const updatedInvItem = { 
+              ...invItem, 
+              inStock: `${newStockNum}${unit}` 
+            };
+            
+            updatedInventoryList[invItemIndex] = updatedInvItem;
+            inventoryChanged = true;
+            
+            // Sync inventory update to Supabase
+            addToSyncQueue({ table: 'inventory', type: 'UPDATE', payload: updatedInvItem });
+          }
+        });
+      }
+    });
+
+    if (inventoryChanged) {
+      setInventory(updatedInventoryList);
+    }
+
     setSales([...sales, newSale]);
     addToSyncQueue({ table: 'sales', type: 'INSERT', payload: newSale });
     return orderNumber;

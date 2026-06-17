@@ -1,12 +1,17 @@
 import React, { useContext, useState } from 'react';
 import { AppDataContext } from '../context/AppDataContext';
-import { Plus, Download, Upload, Edit2, Trash2, Check, X } from 'lucide-react';
+import { Plus, Download, Upload, Edit2, Trash2, Check, X, FileText } from 'lucide-react';
 
 const MenuEditor = () => {
-  const { menuItems, addMenuItem, toggleItemAvailability, deleteMenuItem, updateMenuItem } = useContext(AppDataContext);
+  const { menuItems, inventory, addMenuItem, toggleItemAvailability, deleteMenuItem, updateMenuItem } = useContext(AppDataContext);
   const [newItem, setNewItem] = useState({ name: '', price: '', category: 'Food' });
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({});
+  
+  // Recipe Modal State
+  const [recipeModalOpen, setRecipeModalOpen] = useState(false);
+  const [recipeItem, setRecipeItem] = useState(null);
+  const [currentRecipe, setCurrentRecipe] = useState([]);
 
   const categories = ['Hot Beverages', 'Cold', 'Cold Brew', 'Food', 'Beverages'];
 
@@ -16,7 +21,8 @@ const MenuEditor = () => {
     addMenuItem({
       name: newItem.name,
       price: parseFloat(newItem.price),
-      category: newItem.category
+      category: newItem.category,
+      recipe: []
     });
     setNewItem({ name: '', price: '', category: 'Food' });
   };
@@ -35,12 +41,39 @@ const MenuEditor = () => {
     setEditingId(null);
   };
 
+  // Recipe Management
+  const openRecipeModal = (item) => {
+    setRecipeItem(item);
+    setCurrentRecipe(item.recipe || []);
+    setRecipeModalOpen(true);
+  };
+
+  const addRecipeIngredient = () => {
+    if (inventory.length === 0) return;
+    setCurrentRecipe([...currentRecipe, { ingredientId: inventory[0].id, quantity: 1 }]);
+  };
+
+  const updateRecipeIngredient = (index, field, value) => {
+    const updated = [...currentRecipe];
+    updated[index] = { ...updated[index], [field]: field === 'ingredientId' ? Number(value) : Number(value) };
+    setCurrentRecipe(updated);
+  };
+
+  const removeRecipeIngredient = (index) => {
+    setCurrentRecipe(currentRecipe.filter((_, i) => i !== index));
+  };
+
+  const saveRecipe = () => {
+    updateMenuItem(recipeItem.id, { recipe: currentRecipe });
+    setRecipeModalOpen(false);
+  };
+
   return (
     <>
       <div className="page-header">
         <div>
           <h1 className="page-title">Menu Editor</h1>
-          <p className="page-subtitle">Add, edit & cost your menu items</p>
+          <p className="page-subtitle">Add, edit & manage recipes for live inventory deduction</p>
         </div>
       </div>
 
@@ -108,7 +141,7 @@ const MenuEditor = () => {
                   <th>Item</th>
                   <th>Category</th>
                   <th>Price</th>
-                  <th>Stock</th>
+                  <th>Recipe</th>
                   <th>Available</th>
                   <th>Actions</th>
                 </tr>
@@ -125,7 +158,7 @@ const MenuEditor = () => {
                           </select>
                         </td>
                         <td><input type="number" className="form-input" value={editForm.price} onChange={e => setEditForm({...editForm, price: e.target.value})} style={{width: '80px'}} /></td>
-                        <td><input className="form-input" value={editForm.stock} onChange={e => setEditForm({...editForm, stock: e.target.value})} style={{width: '100px'}} /></td>
+                        <td><button className="btn btn-secondary" style={{padding: '4px 8px'}} onClick={() => openRecipeModal(item)}>Edit Recipe</button></td>
                         <td>
                           <label className="toggle-switch">
                             <input 
@@ -148,7 +181,11 @@ const MenuEditor = () => {
                         <td style={{ fontWeight: 500 }}>{item.name}</td>
                         <td>{item.category}</td>
                         <td>₹{item.price}</td>
-                        <td><span className="status-badge optimal">{item.stock}</span></td>
+                        <td>
+                          <button className="btn btn-secondary" style={{padding: '4px 8px'}} onClick={() => openRecipeModal(item)}>
+                            {item.recipe && item.recipe.length > 0 ? `${item.recipe.length} Ingredients` : 'Add Recipe'}
+                          </button>
+                        </td>
                         <td>
                           <label className="toggle-switch">
                             <input 
@@ -176,6 +213,62 @@ const MenuEditor = () => {
           </div>
         </div>
       </div>
+
+      {/* Recipe Modal */}
+      {recipeModalOpen && recipeItem && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
+          background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
+        }}>
+          <div className="card" style={{ width: '500px', maxHeight: '80vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h3>Recipe for {recipeItem.name}</h3>
+              <button className="action-btn" onClick={() => setRecipeModalOpen(false)}><X size={20}/></button>
+            </div>
+            
+            <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginBottom: '20px' }}>
+              These quantities will be automatically deducted from Inventory every time this item is sold.
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' }}>
+              {currentRecipe.map((ri, index) => (
+                <div key={index} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <select 
+                    className="form-input" 
+                    style={{ flex: 1 }}
+                    value={ri.ingredientId} 
+                    onChange={e => updateRecipeIngredient(index, 'ingredientId', e.target.value)}
+                  >
+                    {inventory.map(inv => (
+                      <option key={inv.id} value={inv.id}>{inv.ingredient} ({String(inv.inStock).replace(/[\d.]/g, '').trim() || 'units'})</option>
+                    ))}
+                  </select>
+                  <input 
+                    type="number" 
+                    className="form-input" 
+                    style={{ width: '100px' }} 
+                    value={ri.quantity} 
+                    onChange={e => updateRecipeIngredient(index, 'quantity', e.target.value)}
+                    step="0.01"
+                  />
+                  <button className="action-btn" onClick={() => removeRecipeIngredient(index)} style={{ color: '#d32f2f' }}>
+                    <Trash2 size={18}/>
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <button className="btn btn-secondary" onClick={addRecipeIngredient} style={{ width: '100%', marginBottom: '20px' }}>
+              <Plus size={16}/> Add Ingredient
+            </button>
+
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <button className="btn btn-secondary" onClick={() => setRecipeModalOpen(false)}>Cancel</button>
+              <button className="btn btn-primary" onClick={saveRecipe}>Save Recipe</button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };
