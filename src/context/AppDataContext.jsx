@@ -139,12 +139,14 @@ export const AppDataProvider = ({ children }) => {
     }
   };
 
-  const login = (pin) => {
+  const login = async (pin) => {
     if (pin === '2629') {
       setUserRole('cashier');
+      await fetchFromSupabase();
       return true;
     } else if (pin === '2593') {
       setUserRole('manager');
+      await fetchFromSupabase();
       return true;
     }
     return false;
