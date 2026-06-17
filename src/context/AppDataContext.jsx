@@ -71,8 +71,9 @@ export const AppDataProvider = ({ children }) => {
     const localSales = localStorage.getItem('sales');
     if (localSales) setSales(JSON.parse(localSales));
 
-    // Try to fetch from Supabase
+    // Try to fetch from Supabase and sync queue
     fetchFromSupabase();
+    syncQueueToSupabase();
 
     return () => {
       window.removeEventListener('online', handleOnline);
