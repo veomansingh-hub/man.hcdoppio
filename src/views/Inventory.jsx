@@ -124,8 +124,8 @@ const Inventory = () => {
           <thead>
             <tr>
               <th>Ingredient</th>
-              <th>Current Stock</th>
               <th>Total Stock</th>
+              <th>Current Stock</th>
               <th>Status</th>
               <th>Actions</th>
             </tr>
@@ -136,8 +136,8 @@ const Inventory = () => {
                 {editingId === item.id ? (
                   <>
                     <td><input className="form-input" value={editForm.ingredient} onChange={e => setEditForm({...editForm, ingredient: e.target.value})} /></td>
-                    <td><input className="form-input" value={editForm.inStock} onChange={e => setEditForm({...editForm, inStock: e.target.value})} style={{width: '100px'}} /></td>
                     <td><input className="form-input" value={editForm.maxCapacity || editForm.inStock} onChange={e => setEditForm({...editForm, maxCapacity: e.target.value})} style={{width: '100px'}} /></td>
+                    <td><input className="form-input" value={editForm.inStock} onChange={e => setEditForm({...editForm, inStock: e.target.value})} style={{width: '100px'}} /></td>
                     <td><BatteryBar percentage={item.statusInfo?.percentage || 0} /></td>
                     <td>
                       <div style={{ display: 'flex', gap: '8px' }}>
@@ -149,6 +149,7 @@ const Inventory = () => {
                 ) : receivingId === item.id ? (
                   <>
                     <td style={{ fontWeight: 500 }}>{item.ingredient}</td>
+                    <td>{item.maxCapacity || item.inStock}</td>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <span>{item.inStock} + </span>
@@ -164,7 +165,6 @@ const Inventory = () => {
                         <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{String(item.inStock).replace(/[\d.]/g, '').trim()}</span>
                       </div>
                     </td>
-                    <td>{item.maxCapacity || item.inStock}</td>
                     <td><BatteryBar percentage={item.statusInfo?.percentage || 0} /></td>
                     <td>
                       <div style={{ display: 'flex', gap: '8px' }}>
@@ -176,8 +176,8 @@ const Inventory = () => {
                 ) : (
                   <>
                     <td style={{ fontWeight: 500 }}>{item.ingredient}</td>
-                    <td style={{ fontWeight: 'bold' }}>{item.inStock}</td>
                     <td style={{ color: 'var(--text-muted)' }}>{item.maxCapacity || item.inStock}</td>
+                    <td style={{ fontWeight: 'bold' }}>{item.inStock}</td>
                     <td><BatteryBar percentage={item.statusInfo?.percentage || 0} /></td>
                     <td>
                       <div style={{ display: 'flex', gap: '8px' }}>
