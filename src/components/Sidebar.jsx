@@ -1,0 +1,71 @@
+import React, { useContext } from 'react';
+import { LayoutDashboard, ShoppingCart, ClipboardList, PenTool } from 'lucide-react';
+import { AppDataContext } from '../context/AppDataContext';
+
+const Sidebar = ({ activeTab, setActiveTab }) => {
+  const { inventory, userRole, logout } = useContext(AppDataContext);
+
+  const hasCritical = inventory.some(i => i.computedStatus === 'Critical');
+  const hasLow = inventory.some(i => i.computedStatus === 'Low Stock');
+
+  const getInventoryIcon = () => {
+    return (
+      <div style={{ position: 'relative', display: 'flex' }}>
+        <ClipboardList size={20} />
+        {(hasCritical || hasLow) && (
+          <div className={`notification-dot ${hasCritical ? 'critical' : 'low'}`} style={{ top: '-4px', right: '-8px' }}></div>
+        )}
+      </div>
+    );
+  };
+
+  const allTabs = [
+    { id: 'pos', name: 'POS', icon: <ShoppingCart size={20} /> },
+    { id: 'inventory', name: 'Inventory', icon: getInventoryIcon() },
+    { id: 'menu_editor', name: 'Menu Editor', icon: <PenTool size={20} /> },
+    { id: 'reports', name: 'Reports', icon: <LayoutDashboard size={20} /> },
+  ];
+
+  const tabs = userRole === 'cashier' 
+    ? allTabs.filter(t => t.id === 'pos' || t.id === 'reports') 
+    : allTabs;
+
+  return (
+    <div className="sidebar">
+      <div className="sidebar-logo">
+        <span className="logo-text">doppio</span>
+        <span className="logo-subtext">cafe</span>
+      </div>
+      
+      <nav className="sidebar-nav">
+        {tabs.map(tab => (
+          <button
+            key={tab.id}
+            className={`nav-item ${activeTab === tab.id ? 'active' : ''}`}
+            onClick={() => setActiveTab(tab.id)}
+          >
+            {tab.icon}
+            <span>{tab.name}</span>
+          </button>
+        ))}
+      </nav>
+
+      <div className="sidebar-footer">
+        <div className="user-info" style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div className="avatar">{userRole === 'manager' ? 'M' : 'C'}</div>
+            <div className="details">
+              <span className="name">{userRole === 'manager' ? 'Manager' : 'Cashier'}</span>
+              <span className="role">{userRole === 'manager' ? 'Full Access' : 'POS Only'}</span>
+            </div>
+          </div>
+          <button onClick={logout} style={{ background: 'transparent', border: 'none', color: '#d32f2f', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}>
+            Logout
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Sidebar;
