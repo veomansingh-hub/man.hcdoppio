@@ -90,6 +90,30 @@ export const AppDataProvider = ({ children }) => {
     };
   }, []);
 
+  // Auto-Background Sync (Polling every 60s)
+  useEffect(() => {
+    if (!isOnline) return;
+    const interval = setInterval(() => {
+      fetchFromSupabase();
+    }, 60000);
+    return () => clearInterval(interval);
+  }, [isOnline]);
+
+  // Supabase Real-time Sync
+  useEffect(() => {
+    if (!supabase) return;
+    
+    const channel = supabase.channel('schema-db-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'menu_items' }, () => fetchFromSupabase())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'inventory' }, () => fetchFromSupabase())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'sales' }, () => fetchFromSupabase())
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
   // Save to localStorage on change
   useEffect(() => { localStorage.setItem('menuItems', JSON.stringify(menuItems)); }, [menuItems]);
   useEffect(() => { localStorage.setItem('inventory', JSON.stringify(inventory)); }, [inventory]);
