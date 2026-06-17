@@ -30,10 +30,12 @@ const playFeedback = () => {
 };
 
 const getCategoryIcon = (cat) => {
-  if (cat.toLowerCase().includes('hot')) return <Coffee size={20} />;
-  if (cat.toLowerCase().includes('cold')) return <CupSoda size={20} />;
-  if (cat.toLowerCase().includes('food') || cat.toLowerCase().includes('pastry')) return <Cake size={20} />;
-  if (cat.toLowerCase().includes('beverage')) return <GlassWater size={20} />;
+  if (!cat) return <Leaf size={20} />;
+  const c = String(cat).toLowerCase();
+  if (c.includes('hot')) return <Coffee size={20} />;
+  if (c.includes('cold')) return <CupSoda size={20} />;
+  if (c.includes('food') || c.includes('pastry')) return <Cake size={20} />;
+  if (c.includes('beverage')) return <GlassWater size={20} />;
   return <Leaf size={20} />;
 };
 
@@ -55,7 +57,7 @@ const POS = () => {
       items = items.filter(item => item.category === activeCategory);
     }
     if (searchQuery) {
-      items = items.filter(item => item.name.toLowerCase().includes(searchQuery.toLowerCase()));
+      items = items.filter(item => (item.name || '').toLowerCase().includes(searchQuery.toLowerCase()));
     }
     return items;
   }, [menuItems, activeCategory, searchQuery]);

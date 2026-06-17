@@ -43,7 +43,7 @@ const MenuEditor = () => {
               const [ingName, qtyStr] = part.split(':').map(s => s.trim());
               if (ingName && qtyStr) {
                 // Find ingredient ID by name
-                const foundIng = inventory.find(i => i.ingredient.toLowerCase() === ingName.toLowerCase());
+                const foundIng = inventory.find(i => (i.ingredient || '').toLowerCase() === (ingName || '').toLowerCase());
                 if (foundIng) {
                   parsedRecipe.push({ ingredientId: foundIng.id, quantity: parseFloat(qtyStr) });
                 }
