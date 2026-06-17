@@ -1,10 +1,10 @@
 import React, { useContext, useState, useRef } from 'react';
 import { AppDataContext } from '../context/AppDataContext';
-import { Plus, Download, Upload, Check, X, Edit2, PackagePlus } from 'lucide-react';
+import { Plus, Download, Upload, Check, X, Edit2, PackagePlus, Trash2 } from 'lucide-react';
 import { importFromCSV, exportToExcel } from '../utils/exportUtils';
 
 const Inventory = () => {
-  const { inventory, updateInventoryItem, addInventoryItem } = useContext(AppDataContext);
+  const { inventory, updateInventoryItem, addInventoryItem, deleteInventoryItem } = useContext(AppDataContext);
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({});
   const [receivingId, setReceivingId] = useState(null);
@@ -38,11 +38,8 @@ const Inventory = () => {
       return;
     }
     
-    // Extract current number and unit
     const currentNum = parseFloat(String(item.inStock).replace(/[^\d.]/g, '')) || 0;
     const unit = String(item.inStock).replace(/[\d.]/g, '').trim();
-    
-    // Add new amount
     const addedNum = parseFloat(receiveAmount);
     const newTotal = currentNum + addedNum;
     
@@ -61,7 +58,11 @@ const Inventory = () => {
       const data = await importFromCSV(file);
       if (data && data.length > 0) {
         data.forEach(item => {
-          if (item.ingredient) addInventoryItem(item);
+          if (item.ingredient) addInventoryItem({
+            ingredient: item.ingredient,
+            inStock: item.inStock || '0',
+            maxCapacity: item.maxCapacity || '100'
+          });
         });
         alert('Inventory imported successfully!');
       }
@@ -73,9 +74,27 @@ const Inventory = () => {
 
   const handleDownloadTemplate = () => {
     const template = [{
-      ingredient: "New Ingredient", category: "Food", inStock: "0kg", minLevel: "5kg", unitCost: "₹100/kg"
+      ingredient: "New Ingredient", inStock: "0g", maxCapacity: "5000g"
     }];
     exportToExcel(template, "doppio_inventory_template");
+  };
+
+  // Battery Bar Component
+  const BatteryBar = ({ percentage }) => {
+    let color = '#4caf50'; // Green
+    if (percentage <= 20) color = '#f44336'; // Red
+    else if (percentage <= 50) color = '#ff9800'; // Orange
+
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '120px' }}>
+        <div style={{ flex: 1, height: '12px', background: '#e0e0e0', borderRadius: '6px', overflow: 'hidden', border: '1px solid #ccc' }}>
+          <div style={{ width: `${percentage}%`, height: '100%', background: color, transition: 'width 0.3s ease' }}></div>
+        </div>
+        <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-muted)', width: '35px' }}>
+          {Math.round(percentage)}%
+        </span>
+      </div>
+    );
   };
 
   return (
@@ -83,7 +102,7 @@ const Inventory = () => {
       <div className="page-header">
         <div>
           <h1 className="page-title">Inventory Control</h1>
-          <p className="page-subtitle">Track stock, suppliers & low-stock alerts</p>
+          <p className="page-subtitle">Track stock, setup max capacities, and view live deductions</p>
         </div>
         <div style={{ display: 'flex', gap: '12px' }}>
           <input 
@@ -95,7 +114,7 @@ const Inventory = () => {
           />
           <button className="btn btn-secondary" onClick={handleDownloadTemplate}><Download size={16}/> Download Template</button>
           <button className="btn btn-secondary" onClick={() => fileInputRef.current?.click()}><Upload size={16}/> Import CSV</button>
-          <button className="btn btn-primary" onClick={() => addInventoryItem({ ingredient: 'New Item', category: 'General', inStock: '0', minLevel: '0', unitCost: '0' })}><Plus size={16}/> Add Ingredient</button>
+          <button className="btn btn-primary" onClick={() => addInventoryItem({ ingredient: 'New Item', inStock: '0g', maxCapacity: '100g' })}><Plus size={16}/> Add Ingredient</button>
         </div>
       </div>
 
@@ -104,11 +123,9 @@ const Inventory = () => {
           <thead>
             <tr>
               <th>Ingredient</th>
-              <th>Category</th>
-              <th>In Stock</th>
-              <th>Min Level</th>
-              <th>Unit Cost</th>
-              <th>Status</th>
+              <th>Live Left Counter</th>
+              <th>Max Capacity</th>
+              <th>Status (%)</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -118,15 +135,9 @@ const Inventory = () => {
                 {editingId === item.id ? (
                   <>
                     <td><input className="form-input" value={editForm.ingredient} onChange={e => setEditForm({...editForm, ingredient: e.target.value})} /></td>
-                    <td><input className="form-input" value={editForm.category} onChange={e => setEditForm({...editForm, category: e.target.value})} /></td>
-                    <td><input className="form-input" value={editForm.inStock} onChange={e => setEditForm({...editForm, inStock: e.target.value})} style={{width: '80px'}} /></td>
-                    <td><input className="form-input" value={editForm.minLevel} onChange={e => setEditForm({...editForm, minLevel: e.target.value})} style={{width: '80px'}} /></td>
-                    <td><input className="form-input" value={editForm.unitCost} onChange={e => setEditForm({...editForm, unitCost: e.target.value})} style={{width: '80px'}} /></td>
-                    <td>
-                      <span className={`status-badge ${item.computedStatus === 'Optimal' ? 'optimal' : item.computedStatus === 'Critical' ? 'critical' : 'low'}`}>
-                        {item.computedStatus} (Auto)
-                      </span>
-                    </td>
+                    <td><input className="form-input" value={editForm.inStock} onChange={e => setEditForm({...editForm, inStock: e.target.value})} style={{width: '100px'}} /></td>
+                    <td><input className="form-input" value={editForm.maxCapacity || editForm.inStock} onChange={e => setEditForm({...editForm, maxCapacity: e.target.value})} style={{width: '100px'}} /></td>
+                    <td><BatteryBar percentage={item.statusInfo?.percentage || 0} /></td>
                     <td>
                       <div style={{ display: 'flex', gap: '8px' }}>
                         <button className="action-btn" onClick={saveEdit} style={{ color: 'var(--success)' }}><Check size={16}/></button>
@@ -137,7 +148,6 @@ const Inventory = () => {
                 ) : receivingId === item.id ? (
                   <>
                     <td style={{ fontWeight: 500 }}>{item.ingredient}</td>
-                    <td>{item.category}</td>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <span>{item.inStock} + </span>
@@ -153,13 +163,8 @@ const Inventory = () => {
                         <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{String(item.inStock).replace(/[\d.]/g, '').trim()}</span>
                       </div>
                     </td>
-                    <td>{item.minLevel}</td>
-                    <td>{item.unitCost}</td>
-                    <td>
-                      <span className={`status-badge ${item.computedStatus === 'Optimal' ? 'optimal' : item.computedStatus === 'Critical' ? 'critical' : 'low'}`}>
-                        {item.computedStatus}
-                      </span>
-                    </td>
+                    <td>{item.maxCapacity || item.inStock}</td>
+                    <td><BatteryBar percentage={item.statusInfo?.percentage || 0} /></td>
                     <td>
                       <div style={{ display: 'flex', gap: '8px' }}>
                         <button className="action-btn" onClick={() => saveReceive(item)} style={{ color: 'var(--success)' }}><Check size={16}/></button>
@@ -170,19 +175,14 @@ const Inventory = () => {
                 ) : (
                   <>
                     <td style={{ fontWeight: 500 }}>{item.ingredient}</td>
-                    <td>{item.category}</td>
-                    <td>{item.inStock}</td>
-                    <td>{item.minLevel}</td>
-                    <td>{item.unitCost}</td>
-                    <td>
-                      <span className={`status-badge ${item.computedStatus === 'Optimal' ? 'optimal' : item.computedStatus === 'Critical' ? 'critical' : 'low'}`}>
-                        {item.computedStatus}
-                      </span>
-                    </td>
+                    <td style={{ fontWeight: 'bold' }}>{item.inStock}</td>
+                    <td style={{ color: 'var(--text-muted)' }}>{item.maxCapacity || item.inStock}</td>
+                    <td><BatteryBar percentage={item.statusInfo?.percentage || 0} /></td>
                     <td>
                       <div style={{ display: 'flex', gap: '8px' }}>
                         <button className="action-btn" onClick={() => startReceive(item)} title="Receive New Stock"><PackagePlus size={16} color="var(--primary)"/></button>
                         <button className="action-btn" onClick={() => startEdit(item)} title="Edit Item"><Edit2 size={16}/></button>
+                        <button className="action-btn" onClick={() => deleteInventoryItem(item.id)} title="Delete Item" style={{ color: '#d32f2f' }}><Trash2 size={16}/></button>
                       </div>
                     </td>
                   </>

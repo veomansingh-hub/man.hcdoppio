@@ -29,25 +29,25 @@ const initialMenuItems = [
 ];
 
 const initialInventory = [
-  { id: 1, ingredient: 'Coffee Beans', category: 'Raw Material', inStock: '5000g', minLevel: '1000g', unitCost: '₹2', status: 'Optimal' },
-  { id: 2, ingredient: 'Milk', category: 'Dairy', inStock: '20L', minLevel: '5L', unitCost: '₹60', status: 'Optimal' },
-  { id: 3, ingredient: 'Chocolate Syrup', category: 'Flavoring', inStock: '2L', minLevel: '0.5L', unitCost: '₹300', status: 'Optimal' },
-  { id: 4, ingredient: 'Caramel Syrup', category: 'Flavoring', inStock: '1L', minLevel: '0.5L', unitCost: '₹300', status: 'Optimal' },
-  { id: 5, ingredient: 'Ice Cups', category: 'Packaging', inStock: '200', minLevel: '50', unitCost: '₹5', status: 'Optimal' },
-  { id: 6, ingredient: 'Paneer Puff (Raw)', category: 'Food', inStock: '20', minLevel: '10', unitCost: '₹20', status: 'Optimal' },
-  { id: 7, ingredient: 'Aloo Puff (Raw)', category: 'Food', inStock: '30', minLevel: '10', unitCost: '₹15', status: 'Optimal' },
-  { id: 8, ingredient: 'Diet Coke Cans', category: 'Beverages', inStock: '50', minLevel: '20', unitCost: '₹30', status: 'Optimal' },
-  { id: 9, ingredient: 'Ginger Ale', category: 'Beverages', inStock: '20', minLevel: '10', unitCost: '₹40', status: 'Optimal' },
-  { id: 10, ingredient: 'Croissants', category: 'Food', inStock: '5', minLevel: '10', unitCost: '₹35', status: 'Low Stock' },
-  { id: 11, ingredient: 'Vanilla Ice Cream', category: 'Dairy', inStock: '5000g', minLevel: '1000g', unitCost: '₹0.5', status: 'Optimal' },
-  { id: 12, ingredient: 'Cold Brew Concentrate', category: 'Raw Material', inStock: '2000ml', minLevel: '500ml', unitCost: '₹1', status: 'Optimal' },
-  { id: 13, ingredient: 'Indian Tonic Water', category: 'Beverages', inStock: '20', minLevel: '5', unitCost: '₹50', status: 'Optimal' },
-  { id: 14, ingredient: 'Sprite/7Up', category: 'Beverages', inStock: '20', minLevel: '5', unitCost: '₹40', status: 'Optimal' },
-  { id: 15, ingredient: 'Fresh Lime Juice', category: 'Raw Material', inStock: '500ml', minLevel: '100ml', unitCost: '₹0.5', status: 'Optimal' },
-  { id: 16, ingredient: 'Simple Sugar Syrup', category: 'Flavoring', inStock: '1000ml', minLevel: '200ml', unitCost: '₹0.1', status: 'Optimal' },
-  { id: 17, ingredient: 'Crushed Ice', category: 'Raw Material', inStock: '10000g', minLevel: '2000g', unitCost: '₹0.01', status: 'Optimal' },
-  { id: 18, ingredient: 'Dark Chocolate Powder', category: 'Raw Material', inStock: '1000g', minLevel: '200g', unitCost: '₹1', status: 'Optimal' },
-  { id: 19, ingredient: 'Irish Cream Syrup', category: 'Flavoring', inStock: '1000ml', minLevel: '200ml', unitCost: '₹0.5', status: 'Optimal' },
+  { id: 1, ingredient: 'Coffee Beans', inStock: '5000g', maxCapacity: '10000g' },
+  { id: 2, ingredient: 'Milk', inStock: '20L', maxCapacity: '50L' },
+  { id: 3, ingredient: 'Chocolate Syrup', inStock: '2L', maxCapacity: '5L' },
+  { id: 4, ingredient: 'Caramel Syrup', inStock: '1L', maxCapacity: '5L' },
+  { id: 5, ingredient: 'Ice Cups', inStock: '200', maxCapacity: '1000' },
+  { id: 6, ingredient: 'Paneer Puff (Raw)', inStock: '20', maxCapacity: '100' },
+  { id: 7, ingredient: 'Aloo Puff (Raw)', inStock: '30', maxCapacity: '100' },
+  { id: 8, ingredient: 'Diet Coke Cans', inStock: '50', maxCapacity: '200' },
+  { id: 9, ingredient: 'Ginger Ale', inStock: '20', maxCapacity: '100' },
+  { id: 10, ingredient: 'Croissants', inStock: '5', maxCapacity: '50' },
+  { id: 11, ingredient: 'Vanilla Ice Cream', inStock: '5000g', maxCapacity: '10000g' },
+  { id: 12, ingredient: 'Cold Brew Concentrate', inStock: '2000ml', maxCapacity: '10000ml' },
+  { id: 13, ingredient: 'Indian Tonic Water', inStock: '20', maxCapacity: '100' },
+  { id: 14, ingredient: 'Sprite/7Up', inStock: '20', maxCapacity: '100' },
+  { id: 15, ingredient: 'Fresh Lime Juice', inStock: '500ml', maxCapacity: '2000ml' },
+  { id: 16, ingredient: 'Simple Sugar Syrup', inStock: '1000ml', maxCapacity: '5000ml' },
+  { id: 17, ingredient: 'Crushed Ice', inStock: '10000g', maxCapacity: '50000g' },
+  { id: 18, ingredient: 'Dark Chocolate Powder', inStock: '1000g', maxCapacity: '5000g' },
+  { id: 19, ingredient: 'Irish Cream Syrup', inStock: '1000ml', maxCapacity: '5000ml' },
 ];
 
 export const AppDataContext = createContext();
@@ -272,6 +272,11 @@ export const AppDataProvider = ({ children }) => {
     addToSyncQueue({ table: 'inventory', type: 'INSERT', payload: newItem });
   };
 
+  const deleteInventoryItem = (id) => {
+    setInventory(prev => prev.filter(item => item.id !== id));
+    addToSyncQueue({ table: 'inventory', type: 'DELETE', payload: { id } });
+  };
+
   const resetSystem = (pin) => {
     if (pin === '2593') {
       setMenuItems(initialMenuItems);
@@ -285,17 +290,22 @@ export const AppDataProvider = ({ children }) => {
     return false;
   };
 
-  const getComputedStatus = (inStockStr, minLevelStr) => {
+  const getComputedStatus = (inStockStr, maxCapacityStr) => {
     const stock = parseFloat(String(inStockStr).replace(/[^\d.]/g, '')) || 0;
-    const min = parseFloat(String(minLevelStr).replace(/[^\d.]/g, '')) || 0;
-    if (stock <= min * 0.5) return 'Critical';
-    if (stock <= min * 1.2) return 'Low Stock';
-    return 'Optimal';
+    const max = parseFloat(String(maxCapacityStr).replace(/[^\d.]/g, '')) || 1; // Prevent div by 0
+    let percentage = (stock / max) * 100;
+    if (percentage > 100) percentage = 100;
+    
+    let colorClass = 'optimal';
+    if (percentage <= 20) colorClass = 'critical';
+    else if (percentage <= 50) colorClass = 'low';
+
+    return { percentage, colorClass };
   };
 
   const enhancedInventory = inventory.map(item => ({
     ...item,
-    computedStatus: getComputedStatus(item.inStock, item.minLevel)
+    statusInfo: getComputedStatus(item.inStock, item.maxCapacity || item.inStock) // Fallback to current stock if no max
   }));
 
   return (
@@ -310,10 +320,11 @@ export const AppDataProvider = ({ children }) => {
       addSale,
       addMenuItem,
       toggleItemAvailability,
-      deleteMenuItem,
       updateMenuItem,
+      deleteMenuItem,
       updateInventoryItem,
       addInventoryItem,
+      deleteInventoryItem,
       setInventory,
       setMenuItems,
       resetSystem
