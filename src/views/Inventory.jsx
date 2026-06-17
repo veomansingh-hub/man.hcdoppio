@@ -124,9 +124,9 @@ const Inventory = () => {
           <thead>
             <tr>
               <th>Ingredient</th>
-              <th>Live Left Counter</th>
-              <th>Max Capacity</th>
-              <th>Status (%)</th>
+              <th>Current Stock</th>
+              <th>Par Level (Total Stock)</th>
+              <th>Health</th>
               <th>Actions</th>
             </tr>
           </thead>
