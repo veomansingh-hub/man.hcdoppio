@@ -179,6 +179,7 @@ const Reports = () => {
 
         </div>
       </div>
+      </div>
     </>
   );
 };
