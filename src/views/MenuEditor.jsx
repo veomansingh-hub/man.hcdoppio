@@ -1,12 +1,14 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useRef } from 'react';
 import { AppDataContext } from '../context/AppDataContext';
 import { Plus, Download, Upload, Edit2, Trash2, Check, X, FileText } from 'lucide-react';
+import { importFromCSV, exportToExcel } from '../utils/exportUtils';
 
 const MenuEditor = () => {
   const { menuItems, inventory, addMenuItem, toggleItemAvailability, deleteMenuItem, updateMenuItem } = useContext(AppDataContext);
   const [newItem, setNewItem] = useState({ name: '', price: '', category: 'Food' });
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({});
+  const fileInputRef = useRef(null);
   
   // Recipe Modal State
   const [recipeModalOpen, setRecipeModalOpen] = useState(false);
@@ -14,6 +16,55 @@ const MenuEditor = () => {
   const [currentRecipe, setCurrentRecipe] = useState([]);
 
   const categories = ['Hot Beverages', 'Cold', 'Cold Brew', 'Food', 'Beverages'];
+
+  const handleDownloadTemplate = () => {
+    const template = [{
+      name: "New Drink", 
+      category: "Cold Brew", 
+      price: "150", 
+      recipe: "Coffee Beans:15 | Milk:0.11"
+    }];
+    exportToExcel(template, "doppio_menu_template");
+  };
+
+  const handleImport = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      const data = await importFromCSV(file);
+      if (data && data.length > 0) {
+        data.forEach(item => {
+          if (!item.name || !item.price) return;
+          
+          let parsedRecipe = [];
+          if (item.recipe && typeof item.recipe === 'string') {
+            const recipeParts = item.recipe.split('|').map(p => p.trim());
+            recipeParts.forEach(part => {
+              const [ingName, qtyStr] = part.split(':').map(s => s.trim());
+              if (ingName && qtyStr) {
+                // Find ingredient ID by name
+                const foundIng = inventory.find(i => i.ingredient.toLowerCase() === ingName.toLowerCase());
+                if (foundIng) {
+                  parsedRecipe.push({ ingredientId: foundIng.id, quantity: parseFloat(qtyStr) });
+                }
+              }
+            });
+          }
+
+          addMenuItem({
+            name: item.name,
+            price: parseFloat(item.price) || 0,
+            category: item.category || 'Food',
+            recipe: parsedRecipe
+          });
+        });
+        alert('Menu imported successfully!');
+      }
+    } catch (err) {
+      alert('Error importing file');
+    }
+    e.target.value = null;
+  };
 
   const handleSave = (e) => {
     e.preventDefault();
@@ -129,8 +180,15 @@ const MenuEditor = () => {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <h3>Menu items</h3>
             <div style={{ display: 'flex', gap: '12px' }}>
-              <button className="btn btn-secondary"><Download size={14}/> Download Template</button>
-              <button className="btn btn-secondary"><Upload size={14}/> Import CSV</button>
+              <input 
+                type="file" 
+                accept=".csv" 
+                ref={fileInputRef} 
+                style={{ display: 'none' }} 
+                onChange={handleImport}
+              />
+              <button className="btn btn-secondary" onClick={handleDownloadTemplate}><Download size={14}/> Download Template</button>
+              <button className="btn btn-secondary" onClick={() => fileInputRef.current?.click()}><Upload size={14}/> Import CSV</button>
             </div>
           </div>
 

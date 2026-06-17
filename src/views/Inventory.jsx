@@ -113,6 +113,7 @@ const Inventory = () => {
             onChange={handleImport}
           />
           <button className="btn btn-secondary" onClick={handleDownloadTemplate}><Download size={16}/> Download Template</button>
+          <button className="btn btn-secondary" onClick={() => exportToExcel(inventory, 'doppio_inventory_export')}><Download size={16}/> Export Inventory</button>
           <button className="btn btn-secondary" onClick={() => fileInputRef.current?.click()}><Upload size={16}/> Import CSV</button>
           <button className="btn btn-primary" onClick={() => addInventoryItem({ ingredient: 'New Item', inStock: '0g', maxCapacity: '100g' })}><Plus size={16}/> Add Ingredient</button>
         </div>
