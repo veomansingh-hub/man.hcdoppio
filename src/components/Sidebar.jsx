@@ -1,6 +1,24 @@
-import React, { useContext } from 'react';
-import { LayoutDashboard, ShoppingCart, ClipboardList, PenTool, X } from 'lucide-react';
+import React, { useContext, useState, useEffect } from 'react';
+import { LayoutDashboard, ShoppingCart, ClipboardList, PenTool, X, Clock } from 'lucide-react';
 import { AppDataContext } from '../context/AppDataContext';
+
+const LiveClock = () => {
+  const [time, setTime] = useState(new Date());
+  
+  useEffect(() => {
+    const timer = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--text-muted)', marginTop: '8px', justifyContent: 'center' }}>
+      <Clock size={12} />
+      <span>{time.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+      <span>•</span>
+      <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{time.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })}</span>
+    </div>
+  );
+};
 
 const Sidebar = ({ activeTab, setActiveTab, isOpen, onClose }) => {
   const { inventory, userRole, logout, isOnline } = useContext(AppDataContext);
@@ -39,6 +57,7 @@ const Sidebar = ({ activeTab, setActiveTab, isOpen, onClose }) => {
             <div style={{ flex: 1, textAlign: 'center' }}>
               <div className="logo-text">doppio</div>
               <div className="logo-subtext">CAFE</div>
+              <LiveClock />
             </div>
             <X className="mobile-only-close" size={24} style={{ display: 'none', cursor: 'pointer' }} onClick={onClose} />
           </div>

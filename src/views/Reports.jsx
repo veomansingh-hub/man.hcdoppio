@@ -215,6 +215,64 @@ const Reports = () => {
 
       <div className="card" style={{ marginTop: '24px' }}>
         <h3 style={{ fontSize: '16px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <ReceiptText size={18}/> Transaction Log (Selected Period)
+        </h3>
+        {filteredSales.length === 0 ? (
+          <div className="empty-state">No transactions in this period</div>
+        ) : (
+          <div className="table-container" style={{ maxHeight: '400px', overflowY: 'auto' }}>
+            <table>
+              <thead>
+                <tr>
+                  <th>Order ID</th>
+                  <th>Date & Time</th>
+                  <th>Items</th>
+                  <th>Method</th>
+                  <th>Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[...filteredSales].reverse().map(sale => {
+                  const saleDate = new Date(sale.date);
+                  return (
+                    <tr key={sale.id}>
+                      <td style={{ fontWeight: 500 }}>{sale.orderNumber}</td>
+                      <td>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          <span>{saleDate.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                          <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                            {saleDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                          </span>
+                        </div>
+                      </td>
+                      <td>
+                        {sale.items && sale.items.map((item, idx) => (
+                          <div key={idx} style={{ fontSize: '13px' }}>{item.quantity}x {item.name}</div>
+                        ))}
+                      </td>
+                      <td>
+                        <span style={{ 
+                          padding: '4px 8px', 
+                          background: 'var(--background)', 
+                          borderRadius: '4px', 
+                          fontSize: '12px',
+                          border: '1px solid var(--border)'
+                        }}>
+                          {sale.method}
+                        </span>
+                      </td>
+                      <td style={{ fontWeight: 600 }}>₹{sale.total.toFixed(2)}</td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      <div className="card" style={{ marginTop: '24px' }}>
+        <h3 style={{ fontSize: '16px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Database size={18}/> Data Management & Backup
         </h3>
         <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginBottom: '16px' }}>
