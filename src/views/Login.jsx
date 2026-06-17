@@ -3,7 +3,7 @@ import { AppDataContext } from '../context/AppDataContext';
 import { Lock } from 'lucide-react';
 
 const Login = () => {
-  const { login } = useContext(AppDataContext);
+  const { login, isOnline } = useContext(AppDataContext);
   const [pin, setPin] = useState('');
   const [error, setError] = useState('');
 
@@ -28,7 +28,12 @@ const Login = () => {
   };
 
   return (
-    <div style={{ display: 'flex', height: '100vh', width: '100vw', background: 'var(--bg-color)', alignItems: 'center', justifyContent: 'center' }}>
+    <div style={{ display: 'flex', height: '100vh', width: '100vw', background: 'var(--bg-color)', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+      <div style={{ position: 'absolute', top: '24px', right: '32px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: isOnline ? 'var(--success)' : '#d32f2f' }}></div>
+        <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-muted)' }}>{isOnline ? 'System Online' : 'System Offline'}</span>
+      </div>
+
       <div className="card" style={{ width: '380px', padding: '40px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <div style={{ background: '#ffebee', color: 'var(--primary)', padding: '16px', borderRadius: '50%', marginBottom: '24px' }}>
           <Lock size={32} />

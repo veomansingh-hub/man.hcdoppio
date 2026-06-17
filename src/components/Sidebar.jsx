@@ -3,7 +3,7 @@ import { LayoutDashboard, ShoppingCart, ClipboardList, PenTool } from 'lucide-re
 import { AppDataContext } from '../context/AppDataContext';
 
 const Sidebar = ({ activeTab, setActiveTab }) => {
-  const { inventory, userRole, logout } = useContext(AppDataContext);
+  const { inventory, userRole, logout, isOnline } = useContext(AppDataContext);
 
   const hasCritical = inventory.some(i => i.computedStatus === 'Critical');
   const hasLow = inventory.some(i => i.computedStatus === 'Low Stock');
@@ -53,7 +53,15 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
       <div className="sidebar-footer">
         <div className="user-info" style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div className="avatar">{userRole === 'manager' ? 'M' : 'C'}</div>
+            <div className="avatar" style={{ position: 'relative' }}>
+              {userRole === 'manager' ? 'M' : 'C'}
+              <div style={{
+                width: '10px', height: '10px', borderRadius: '50%',
+                background: isOnline ? 'var(--success)' : '#d32f2f',
+                position: 'absolute', bottom: '0', right: '0',
+                border: '2px solid var(--surface)'
+              }}></div>
+            </div>
             <div className="details">
               <span className="name">{userRole === 'manager' ? 'Manager' : 'Cashier'}</span>
               <span className="role">{userRole === 'manager' ? 'Full Access' : 'POS Only'}</span>

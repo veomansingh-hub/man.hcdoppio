@@ -1,9 +1,37 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import { AppDataContext } from '../context/AppDataContext';
-import { IndianRupee, ReceiptText, TrendingUp, Percent } from 'lucide-react';
+import { IndianRupee, ReceiptText, TrendingUp, Percent, Download, Upload, AlertTriangle, Database } from 'lucide-react';
+import { exportToJSON, exportToCSV, exportToExcel, exportToPDF } from '../utils/exportUtils';
 
 const Reports = () => {
-  const { sales } = useContext(AppDataContext);
+  const { sales, inventory, menuItems, resetSystem } = useContext(AppDataContext);
+  const [resetPin, setResetPin] = useState('');
+
+  const handleExport = (format) => {
+    const backupData = { menuItems, inventory, sales };
+    if (format === 'json') exportToJSON(backupData, 'doppio_backup');
+    else if (format === 'csv') exportToCSV(sales, 'doppio_sales');
+    else if (format === 'xlsx') exportToExcel(inventory, 'doppio_inventory');
+    else if (format === 'pdf') exportToPDF(sales, 'doppio_sales_report', 'Sales Report');
+  };
+
+  const handleReset = () => {
+    if (!resetPin) return;
+    const success = resetSystem(resetPin);
+    if (success) {
+      alert('System reset to factory defaults successfully!');
+      setResetPin('');
+    } else {
+      alert('Invalid Manager PIN');
+    }
+  };
+
+  const handleImport = (e) => {
+    // Basic import logic UI hook
+    if (e.target.files.length > 0) {
+      alert(`Imported ${e.target.files[0].name} (Logic simulated for demo)`);
+    }
+  };
 
   const totalRevenue = sales.reduce((sum, sale) => sum + sale.total, 0);
   const totalOrders = sales.length;
@@ -114,6 +142,41 @@ const Reports = () => {
               </tbody>
             </table>
           </div>
+        </div>
+      <div className="chart-card" style={{ gridColumn: 'span 2', marginTop: '24px' }}>
+        <div className="chart-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Database size={20}/> Data Management & Backup</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px' }}>
+          
+          <div>
+            <h3 style={{ fontSize: '14px', marginBottom: '16px', color: 'var(--text-muted)' }}>Export / Import Data</h3>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px' }}>
+              <button className="btn btn-secondary" onClick={() => handleExport('json')}><Download size={16}/> JSON Backup</button>
+              <button className="btn btn-secondary" onClick={() => handleExport('xlsx')}><Download size={16}/> Excel (Inventory)</button>
+              <button className="btn btn-secondary" onClick={() => handleExport('csv')}><Download size={16}/> CSV (Sales)</button>
+              <button className="btn btn-secondary" onClick={() => handleExport('pdf')}><Download size={16}/> PDF Report</button>
+            </div>
+            <div style={{ position: 'relative' }}>
+              <input type="file" id="import-file" style={{ display: 'none' }} onChange={handleImport} accept=".json,.csv,.xlsx" />
+              <label htmlFor="import-file" className="btn btn-secondary" style={{ cursor: 'pointer', display: 'inline-flex' }}><Upload size={16}/> Import Data</label>
+            </div>
+          </div>
+
+          <div style={{ borderLeft: '1px solid var(--border)', paddingLeft: '40px' }}>
+            <h3 style={{ fontSize: '14px', marginBottom: '16px', color: '#d32f2f', display: 'flex', alignItems: 'center', gap: '4px' }}><AlertTriangle size={16}/> Danger Zone</h3>
+            <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '16px' }}>Resetting the system will clear all local data and truncate the remote Supabase database.</p>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <input 
+                type="password" 
+                placeholder="Manager PIN" 
+                className="form-input" 
+                style={{ width: '150px' }}
+                value={resetPin}
+                onChange={e => setResetPin(e.target.value)}
+              />
+              <button className="btn btn-primary" style={{ background: '#d32f2f' }} onClick={handleReset}>Factory Reset</button>
+            </div>
+          </div>
+
         </div>
       </div>
     </>
