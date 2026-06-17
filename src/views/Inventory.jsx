@@ -1,17 +1,20 @@
 import React, { useContext, useState, useRef } from 'react';
 import { AppDataContext } from '../context/AppDataContext';
-import { Plus, Download, Upload, Check, X, Edit2 } from 'lucide-react';
+import { Plus, Download, Upload, Check, X, Edit2, PackagePlus } from 'lucide-react';
 import { importFromCSV, exportToExcel } from '../utils/exportUtils';
 
 const Inventory = () => {
   const { inventory, updateInventoryItem, addInventoryItem } = useContext(AppDataContext);
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({});
+  const [receivingId, setReceivingId] = useState(null);
+  const [receiveAmount, setReceiveAmount] = useState('');
   const fileInputRef = useRef(null);
 
   const startEdit = (item) => {
     setEditingId(item.id);
     setEditForm(item);
+    setReceivingId(null);
   };
 
   const saveEdit = () => {
@@ -21,6 +24,34 @@ const Inventory = () => {
 
   const cancelEdit = () => {
     setEditingId(null);
+  };
+
+  const startReceive = (item) => {
+    setReceivingId(item.id);
+    setReceiveAmount('');
+    setEditingId(null);
+  };
+
+  const saveReceive = (item) => {
+    if (!receiveAmount || isNaN(parseFloat(receiveAmount))) {
+      setReceivingId(null);
+      return;
+    }
+    
+    // Extract current number and unit
+    const currentNum = parseFloat(String(item.inStock).replace(/[^\d.]/g, '')) || 0;
+    const unit = String(item.inStock).replace(/[\d.]/g, '').trim();
+    
+    // Add new amount
+    const addedNum = parseFloat(receiveAmount);
+    const newTotal = currentNum + addedNum;
+    
+    updateInventoryItem(item.id, { inStock: `${newTotal}${unit}` });
+    setReceivingId(null);
+  };
+
+  const cancelReceive = () => {
+    setReceivingId(null);
   };
 
   const handleImport = async (e) => {
@@ -103,6 +134,39 @@ const Inventory = () => {
                       </div>
                     </td>
                   </>
+                ) : receivingId === item.id ? (
+                  <>
+                    <td style={{ fontWeight: 500 }}>{item.ingredient}</td>
+                    <td>{item.category}</td>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span>{item.inStock} + </span>
+                        <input 
+                          type="number" 
+                          className="form-input" 
+                          value={receiveAmount} 
+                          onChange={e => setReceiveAmount(e.target.value)} 
+                          style={{width: '70px', padding: '4px'}} 
+                          placeholder="Amount"
+                          autoFocus
+                        />
+                        <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{String(item.inStock).replace(/[\d.]/g, '').trim()}</span>
+                      </div>
+                    </td>
+                    <td>{item.minLevel}</td>
+                    <td>{item.unitCost}</td>
+                    <td>
+                      <span className={`status-badge ${item.computedStatus === 'Optimal' ? 'optimal' : item.computedStatus === 'Critical' ? 'critical' : 'low'}`}>
+                        {item.computedStatus}
+                      </span>
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button className="action-btn" onClick={() => saveReceive(item)} style={{ color: 'var(--success)' }}><Check size={16}/></button>
+                        <button className="action-btn" onClick={cancelReceive} style={{ color: '#d32f2f' }}><X size={16}/></button>
+                      </div>
+                    </td>
+                  </>
                 ) : (
                   <>
                     <td style={{ fontWeight: 500 }}>{item.ingredient}</td>
@@ -116,7 +180,10 @@ const Inventory = () => {
                       </span>
                     </td>
                     <td>
-                      <button className="action-btn" onClick={() => startEdit(item)}><Edit2 size={16}/></button>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button className="action-btn" onClick={() => startReceive(item)} title="Receive New Stock"><PackagePlus size={16} color="var(--primary)"/></button>
+                        <button className="action-btn" onClick={() => startEdit(item)} title="Edit Item"><Edit2 size={16}/></button>
+                      </div>
                     </td>
                   </>
                 )}
