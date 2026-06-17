@@ -356,7 +356,9 @@ export const AppDataProvider = ({ children }) => {
       deleteInventoryItem,
       setInventory,
       setMenuItems,
-      resetSystem
+      resetSystem,
+      getComputedStatus,
+      fetchFromSupabase
     }}>
       {children}
     </AppDataContext.Provider>

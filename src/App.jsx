@@ -57,14 +57,24 @@ const BottomNav = ({ activeTab, setActiveTab }) => {
 };
 
 function AppContent() {
-  const { userRole, isOnline } = useContext(AppDataContext);
+  const { userRole, isOnline, fetchFromSupabase, logout } = useContext(AppDataContext);
   const [activeTab, setActiveTab] = useState('pos');
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   useEffect(() => {
     if (userRole) {
       setActiveTab('pos');
     }
   }, [userRole]);
+
+  useEffect(() => {
+    if (isDarkMode) {
+      document.body.classList.add('dark-mode');
+    } else {
+      document.body.classList.remove('dark-mode');
+    }
+  }, [isDarkMode]);
 
   if (!userRole) {
     return <Login />;
@@ -81,16 +91,26 @@ function AppContent() {
     }
   };
 
+  const handleManualSync = async () => {
+    setIsSyncing(true);
+    await fetchFromSupabase();
+    setTimeout(() => setIsSyncing(false), 1000);
+  };
+
   return (
     <div className="app-container">
       <main className="main-content">
         <header className="global-header">
           <div className="logo-text" style={{ fontSize: '18px', letterSpacing: '1px', color: 'var(--text-main)', textTransform: 'uppercase' }}>RESTAURANT</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div className={`network-status-dot ${isOnline ? 'online' : 'offline'}`}></div>
-            <div className="header-icon-btn">☾</div>
-            <div className="header-icon-btn">🔔</div>
-            <div className="header-avatar">B</div>
+            <div className={`network-status-dot ${isOnline ? 'online' : 'offline'}`} title={isOnline ? "Online" : "Offline"}></div>
+            <div className="header-icon-btn" onClick={() => setIsDarkMode(!isDarkMode)} title="Toggle Dark Mode">☾</div>
+            <div className="header-icon-btn" onClick={handleManualSync} title="Force Sync with Cloud">
+              <span style={{ color: isSyncing ? '#4caf50' : 'inherit' }}>↻</span>
+            </div>
+            <div className="header-avatar" onClick={() => logout()} title="Logout" style={{ cursor: 'pointer' }}>
+              {userRole === 'manager' ? 'M' : 'C'}
+            </div>
           </div>
         </header>
         <div className="view-container">
