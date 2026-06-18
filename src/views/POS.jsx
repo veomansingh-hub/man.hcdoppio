@@ -121,6 +121,7 @@ const POS = () => {
           </div>
           <button className="btn btn-secondary" onClick={() => handleCompleteCheckout('UPI')} style={{ width: '100%' }}>Pay via UPI</button>
           <button className="btn btn-primary" onClick={() => setCheckoutMode('cash')} style={{ width: '100%' }}>Pay via Cash</button>
+          <button className="btn btn-secondary" onClick={() => handleCompleteCheckout('DUE')} style={{ width: '100%', background: '#ffebee', color: '#c62828', borderColor: '#ffcdd2' }}>Park Order (DUE)</button>
         </div>
       );
     }

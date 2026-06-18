@@ -248,6 +248,18 @@ export const AppDataProvider = ({ children }) => {
     }
   };
 
+  const markSalePaid = (saleId, newMethod) => {
+    const updatedSales = sales.map(s => {
+      if (s.id === saleId) {
+        const paidSale = { ...s, method: newMethod };
+        addToSyncQueue({ table: 'sales', type: 'UPDATE', payload: paidSale });
+        return paidSale;
+      }
+      return s;
+    });
+    setSales(updatedSales);
+  };
+
   const addSale = (orderTotal, taxCollected, paymentMethod, items) => {
     const now = new Date();
     const dd = String(now.getDate()).padStart(2, '0');
@@ -419,7 +431,8 @@ export const AppDataProvider = ({ children }) => {
       fetchFromSupabase,
       adminDeleteSale,
       adminClearAllSales,
-      voidSale
+      voidSale,
+      markSalePaid
     }}>
       {children}
     </AppDataContext.Provider>

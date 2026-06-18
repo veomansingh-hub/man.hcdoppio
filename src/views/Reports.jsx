@@ -1,12 +1,12 @@
 import React, { useContext, useState, useMemo } from 'react';
 import { AppDataContext } from '../context/AppDataContext';
-import { Trash2, IndianRupee, ReceiptText, TrendingUp, Percent, Download, Upload, AlertTriangle, Database, Calendar } from 'lucide-react';
+import { Check, Trash2, IndianRupee, ReceiptText, TrendingUp, Percent, Download, Upload, AlertTriangle, Database, Calendar } from 'lucide-react';
 import { exportToJSON, exportToCSV, exportToExcel, exportToPDF } from '../utils/exportUtils';
 import { startOfWeek, endOfWeek, isWithinInterval, isSameDay, format, parseISO } from 'date-fns';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const Reports = () => {
-  const { sales, inventory, menuItems, resetSystem, userRole, adminDeleteSale, adminClearAllSales, voidSale } = useContext(AppDataContext);
+  const { sales, inventory, menuItems, resetSystem, userRole, adminDeleteSale, adminClearAllSales, voidSale, markSalePaid } = useContext(AppDataContext);
   const [resetPin, setResetPin] = useState('');
 
   // Default to current week
@@ -59,7 +59,7 @@ const Reports = () => {
     });
   }, [sales, startDate, endDate]);
 
-  const validSales = filteredSales.filter(s => s.status !== 'voided');
+  const validSales = filteredSales.filter(s => s.status !== 'voided' && s.method !== 'DUE');
   const totalRevenue = validSales.reduce((sum, sale) => sum + sale.total, 0);
   const totalOrders = validSales.length;
   const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
@@ -239,10 +239,12 @@ const Reports = () => {
                       <td>
                         <span style={{ 
                           padding: '4px 8px', 
-                          background: 'var(--background)', 
+                          background: sale.method === 'DUE' ? '#ffebee' : 'var(--background)', 
+                          color: sale.method === 'DUE' ? '#c62828' : 'inherit',
+                          fontWeight: sale.method === 'DUE' ? 'bold' : 'normal',
                           borderRadius: '4px', 
                           fontSize: '12px',
-                          border: '1px solid var(--border)'
+                          border: `1px solid ${sale.method === 'DUE' ? '#ffcdd2' : 'var(--border)'}`
                         }}>
                           {sale.method}
                         </span>
@@ -254,11 +256,22 @@ const Reports = () => {
                         {sale.status === 'voided' ? (
                           <span style={{ fontSize: '12px', color: '#d32f2f', fontWeight: 600, background: '#ffebee', padding: '2px 6px', borderRadius: '4px' }}>VOIDED</span>
                         ) : (
-                          <button onClick={() => {
-                            if (window.confirm("Void this transaction? (Items will return to inventory)")) voidSale(sale.id);
-                          }} style={{ color: '#ff9800', background: 'none', border: 'none', cursor: 'pointer', marginRight: '8px' }}>
-                            <AlertTriangle size={16} />
-                          </button>
+                          <>
+                            {sale.method === 'DUE' && (
+                              <button onClick={() => {
+                                const m = window.prompt("Mark as paid? Enter 'Cash' or 'UPI':", "Cash");
+                                if (m === 'Cash' || m === 'UPI') markSalePaid(sale.id, m);
+                                else if (m !== null) alert("Invalid payment method. Use 'Cash' or 'UPI'.");
+                              }} style={{ color: 'var(--success)', background: 'none', border: 'none', cursor: 'pointer', marginRight: '8px' }} title="Mark Paid">
+                                <Check size={16} />
+                              </button>
+                            )}
+                            <button onClick={() => {
+                              if (window.confirm("Void this transaction? (Items will return to inventory)")) voidSale(sale.id);
+                            }} style={{ color: '#ff9800', background: 'none', border: 'none', cursor: 'pointer', marginRight: '8px' }} title="Void Order">
+                              <AlertTriangle size={16} />
+                            </button>
+                          </>
                         )}
                         {userRole === 'admin' && (
                           <button onClick={() => {
